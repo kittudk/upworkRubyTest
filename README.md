@@ -1,13 +1,9 @@
 # upworkRubyTest
 
-- This project contains two files
-
-	TestClass/TestCase File = UpWorkTestCase
-	Page file = HomePage
-
 - Configurations:
 
 	- Browser and Search keyword can be configured in UpWorkTestCase file.
+	- No other gem apart from selenium-webdriver is installed.
 
 - Pre-requisites :
 
