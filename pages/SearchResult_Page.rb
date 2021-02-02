@@ -1,5 +1,5 @@
 require "selenium-webdriver"
-require_relative "./CommonElements"
+require_relative "./Page"
 
 class SearchResult_Page < CommonElements
 
@@ -13,8 +13,9 @@ class SearchResult_Page < CommonElements
   SEARCH_RESULT_CLEAR_BTN = {:css => ".up-btn-clear"}
   SEARCH_RESULT_SLIDER_FREELANCER_NAME = {:css => "section.up-card-section [itemprop='name']"}
   SLIDER_FREELANCER_TITLE = {:css => ".up-card-section.py-30 h2[role='presentation']"}
-  SLIDER_FREELANCER_OVERVIEW = {:css => "#up-lineclamp-1 .text-pre-line"}
-  SLIDER_FREELANCER_OVERVIEW_MOREBTN = {:css => ".up-line-clamp [aria-controls='up-lineclamp-1']"}
+  SLIDER_FREELANCER_OVERVIEW_EXPANDED = {:css => ".up-line-clamp-expanded .text-pre-line"}
+  SLIDER_FREELANCER_OVERVIEW = {:css => ".up-line-clamp .text-pre-line"}
+  SLIDER_FREELANCER_OVERVIEW_MOREBTN = {:css => ".up-line-clamp .up-btn-link"}
   SLIDER_FREELANCER_SKILLS = {:css => "section.up-card-section.py-30 .skills .up-skill-badge"}
 
   # =========================================================================================
@@ -28,13 +29,12 @@ class SearchResult_Page < CommonElements
 
   # ================================== Actions/Methods =====================================
 
+  #verify search result page is shown and save search result data
   def verify_if_searchresult_page_is_shown
-
     handle_captcha
     wait_until_element_displays(SEARCH_RESULT_CLEAR_BTN,15)
     puts "Search Result is shown"
     storeResultsInHash
-
   end
 
   # Verify if keyword is present in each of the search result
@@ -52,15 +52,21 @@ class SearchResult_Page < CommonElements
 
   # Click on random freelancer and verify details
   def click_on_randomfreelancer_and_verifyDetails(searchKeyword)
-    click_on_freelancer_from_currentPage(3)
-    verify_selected_freelancer_details(3,searchKeyword)
+    click_on_freelancer_and_verifyDetails(2,searchKeyword)
+  end
+
+  def get_number_of_results_from_currentPage
+    return  driver.find_elements(SEARCH_RESULTS).size
   end
 
   # Click on mentioned number of result in seach result page and verify details
   def click_on_freelancer_and_verifyDetails(n_result,searchKeyword)
+    if (n_result < get_number_of_results_from_currentPage)
     click_on_freelancer_from_currentPage(n_result)
     verify_selected_freelancer_details(n_result,searchKeyword)
-
+  else
+    puts "Random result "+n_result.to_s+" to be clicked is not found on the current page"
+  end
   end
 
   def click_on_freelancer_from_currentPage(n_result)
@@ -73,36 +79,51 @@ class SearchResult_Page < CommonElements
   end
 
   def get_all_freelancers_title_from_currentpage
-    puts "Storing result info data in Array of hashes"
+    puts "Fetch all freelancers titles from currentpage"
     freelance_title = driver.find_elements(SEARCH_RESULTS_FREELANCER_TITLE)
     return freelance_title
   end
 
   def get_all_freelancer_names_from_currentpage
+    puts "Fetch all freelancers names from currentpage"
     freelancer_name = driver.find_elements(SEARCH_RESULTS_FREELANCER_NAME)
     return freelancer_name
   end
 
   def get_all_freelancers_overview_from_currentpage
+    puts "Fetch all freelancers overview from currentpage"
     return driver.find_elements(SEARCH_RESULTS_FREELANCER_OVERVIEW)
   end
 
   def get_selected_freelancer_name_from_slider
+    wait_until_element_displays(SEARCH_RESULT_SLIDER_FREELANCER_NAME,15)
+    puts "Get selected freelancer name from slider"
     return driver.find_element(SEARCH_RESULT_SLIDER_FREELANCER_NAME).text
   end
 
   def get_selected_freelancer_title_from_slider
+    wait_until_element_displays(SLIDER_FREELANCER_TITLE,15)
+    puts "Get selected freelancer title from slider"
     return driver.find_element(SLIDER_FREELANCER_TITLE).text
   end
 
   def get_selected_freelancer_overview_from_slider
-    return driver.find_element(SLIDER_FREELANCER_OVERVIEW).text
+
+    wait_until_webelement_displays(driver.find_elements(SLIDER_FREELANCER_OVERVIEW)[0],15)
+    puts "Get selected freelancer overview from slider"
+    if(driver.find_elements(SLIDER_FREELANCER_OVERVIEW_MOREBTN).size > 0)
+      click_on_more_btn_from_slider
+      selected_freelancer_overview = driver.find_elements(SLIDER_FREELANCER_OVERVIEW_EXPANDED)[0].text
+    else
+      selected_freelancer_overview = driver.find_elements(SLIDER_FREELANCER_OVERVIEW)[0].text
+    end
+    return selected_freelancer_overview
   end
 
   def get_selected_freelancer_skills_from_slider
+    puts "Get selected freelancer skills from slider"
     selected_freelancer_skills =  driver.find_elements(SLIDER_FREELANCER_SKILLS)
     selected_skill_arr = []
-
     selected_freelancer_skills.each do |skill|
       selected_skill_arr.push(skill.text)
     end
@@ -110,10 +131,10 @@ class SearchResult_Page < CommonElements
   end
 
   def click_on_more_btn_from_slider
+    wait_until_element_displays(SLIDER_FREELANCER_OVERVIEW_MOREBTN,15)
+    driver.find_element(SLIDER_FREELANCER_OVERVIEW_MOREBTN).click
     puts "Click on more button in previously opened slider"
-    if(driver.find_elements(SLIDER_FREELANCER_OVERVIEW_MOREBTN).size > 0)
-      driver.find_element(SLIDER_FREELANCER_OVERVIEW_MOREBTN).click
-    end
+
   end
 
   def verify_if_selected_slider_contains(keyword)
@@ -132,14 +153,12 @@ class SearchResult_Page < CommonElements
   # Verify recently clicked freelancer information
   def verify_selected_freelancer_details(nth_result,keyword)
 
-    click_on_more_btn_from_slider
-
     puts "Retrieve Freelancer name , title ,overview and skills"
     selected_freelancer_name = get_selected_freelancer_name_from_slider
     selected_freelancer_title = get_selected_freelancer_title_from_slider
-    selected_freelancer_overview = get_selected_freelancer_overview_from_slider
-
     selected_skill_arr = get_selected_freelancer_skills_from_slider
+
+    get_selected_freelancer_overview_from_slider
 
     puts "=============== Compare Name =========================="
     puts selected_freelancer_name+" , "+@@search_result_information[nth_result]['name']
@@ -175,6 +194,7 @@ class SearchResult_Page < CommonElements
     freelancer_name = get_all_freelancer_names_from_currentpage
 
     index=0
+    @@search_result_information=Array.new
     until index >= results.size
       string_skill = Array.new
       searchData = Hash.new

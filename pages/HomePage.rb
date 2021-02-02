@@ -1,53 +1,32 @@
   require "selenium-webdriver"
-  require_relative "./CommonElements"
+  require_relative "./Page"
 
 
-class HomePage < CommonElements
+  class HomePage < CommonElements
 
-# ====================== Elements =========================================================
+    # ====================== Elements =========================================================
+    HOMEPAGE_GETSTARTED_BTN = {:css => "[data-qa='cta']"}
+    HOMEPAGE_HIRETALENT_BTN = {:css => "[data-qa='hire-talent-btn']"}
 
-  HOMEPAGE_SEARCH_SWITCHBTN = {:css => "[data-cy='search-switch-button']"}
-  HOMEPAGE_PROFESSIONAL_AGENCIES = {:css => "[data-cy='menuitem-freelancers-button']"}
-  HOMEPAGE_SEARCH_TEXTBOX = {:name => 'q'}
-# ========================================================================================
-  attr_reader :driver
+    # ========================================================================================
+    attr_reader :driver
 
-  def initialize(driver)
-    @driver = driver
+    def initialize(driver)
+      @driver = driver
+    end
+
+    # ================================== Actions/Methods ====================================
+
+    def verify_If_homePage_isshown
+      handle_captcha()
+      title = driver.title
+      puts title
+      if driver.find_elements(HOMEPAGE_GETSTARTED_BTN).size > 0
+        wait_until_element_displays(HOMEPAGE_GETSTARTED_BTN,15)
+        puts "Home/Landing page is loaded"
+      elsif driver.find_elements(HOMEPAGE_HIRETALENT_BTN).size > 0
+        wait_until_element_displays(HOMEPAGE_HIRETALENT_BTN,15)
+        puts "Home/Landing page is loaded"
+      end
+    end
   end
-
-# ================================== Actions/Methods ====================================
-
-  def verify_If_homePage_isshown
-    handle_captcha()
-    wait_until_element_displays(HOMEPAGE_SEARCH_SWITCHBTN,15)
-    title = driver.title
-    puts title
-    puts "Home page is loaded"
-  end
-
-  def click_on_switchsearch_btn
-    puts "Click on switch button in search text box"
-    search_switch_btn = driver.find_element(HOMEPAGE_SEARCH_SWITCHBTN)
-    search_switch_btn.click
-  end
-
-  def select_hire_professional_agencies
-
-    puts "Select Talent option from switch search dropdown"
-    professional_agencies = driver.find_element(HOMEPAGE_PROFESSIONAL_AGENCIES)
-    professional_agencies.click
-    sleep 2
-
-  end
-
-  def enter_search_keyword_into_searchbox(keyword)
-
-    puts "Enter "+keyword+" into searchbox"
-    element = driver.find_element(HOMEPAGE_SEARCH_TEXTBOX)
-    element.send_keys keyword
-    element.submit
-
-  end
-
-end
