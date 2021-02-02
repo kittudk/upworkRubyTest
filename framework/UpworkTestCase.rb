@@ -4,7 +4,7 @@
     class Config
 
       #Define which browser to be used
-      BROWSER = Constants::FIREFOX\
+      BROWSER = Constants::FIREFOX
 
       @@driver = nil
 
